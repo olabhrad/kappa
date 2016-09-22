@@ -40,14 +40,12 @@ class Function(object):
         self._config = config
         self._lambda_client = kappa.awsclient.create_client(
             'lambda', context.session)
-        self._logs_client = kappa.awsclient.create_client(
-            'logs', context.session)
         self._response = None
         self._log = None
 
     @property
     def name(self):
-        return '{}_{}'.format(self._context.name, self._context.environment)
+        return self._context.name
 
     @property
     def runtime(self):
@@ -96,10 +94,6 @@ class Function(object):
     @property
     def permissions(self):
         return self._config.get('permissions', list())
-
-    @property
-    def log_retention_policy(self):
-        return self._config.get('log_retention_policy', "")
 
     @property
     def log(self):
@@ -378,10 +372,6 @@ class Function(object):
                 permission.get('source_arn'),
                 permission.get('source_account'))
 
-    def add_log_retention_policy(self):
-        if self.log_retention_policy:
-            self.log.add_log_retention_policy(self.log_retention_policy)
-
     def create(self):
         LOG.info('creating function %s', self.name)
         self._check_function_md5()
@@ -423,7 +413,6 @@ class Function(object):
                     LOG.exception('Unable to upload zip file')
                     ready = True
         self.add_permissions()
-        self.add_log_retention_policy()
 
     def update(self):
         LOG.info('updating function %s', self.name)
@@ -445,7 +434,6 @@ class Function(object):
                         'For the {} stage'.format(self._context.environment))
                 except Exception:
                     LOG.exception('unable to update zip file')
-        self.add_log_retention_policy()
 
     def update_configuration(self):
         if self._check_config_md5():
